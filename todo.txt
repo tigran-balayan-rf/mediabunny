@@ -7,3 +7,39 @@ Also, why not just have the packet metadata on the packet? I think that would ma
 
 - keep input/demuxer.isSupported()?
 - getCodecParamterString() hack feels dirty; idk. well its not really a hack but, surface it over a different field?
+
+
+Situation:
+When there is only one track type, there are different ways the tracks can be laid out. It could be like
+
+#EXT-X-STREAM-INF
+stream1
+#EXT-X-STREAM-INF
+stream2
+#EXT-X-STREAM-INF
+stream3
+
+Or also
+
+#EXT-X-MEDIA:GROUP="sus",URI="stream2"
+#EXT-X-MEDIA:GROUP="sus",URI="stream3"
+...
+
+#EXT-X-STREAM-INF:VIDEO="sus"
+stream1
+
+These carry different semantics. The one kinda implies different resolutions/bitrates of the same content, the other
+implies different renditions.
+
+
+
+
+
+
+New thing:
+Each track has groupId and pairableGroupIds. The semantics are, tracks with the same group ID can only be paired if
+they differ in media type. Tracks with separate group ID can only be paired if at least one of the tracks references
+the other in pairableGroupIds.
+
+Algo idea:
+- Loop over all video tracks

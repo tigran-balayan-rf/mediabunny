@@ -96,6 +96,8 @@ export type BaseTrackMetadata = {
 	 * If you're not fully sure, make sure to add a buffer of around 33% to make sure you stay below the maximum.
 	 */
 	maximumPacketCount?: number;
+	groupId?: number;
+	pairableGroupIds?: number[];
 };
 
 /**
@@ -144,6 +146,18 @@ const validateBaseTrackMetadata = (metadata: BaseTrackMetadata) => {
 		&& (!Number.isInteger(metadata.maximumPacketCount) || metadata.maximumPacketCount < 0)
 	) {
 		throw new TypeError('metadata.maximumPacketCount, when provided, must be a non-negative integer.');
+	}
+	if (metadata.groupId !== undefined && (!Number.isInteger(metadata.groupId) || metadata.groupId < 0)) {
+		throw new TypeError('metadata.groupId, when provided, must be a non-negative integer.');
+	}
+	if (
+		metadata.pairableGroupIds !== undefined
+		&& (
+			!Array.isArray(metadata.pairableGroupIds)
+			|| metadata.pairableGroupIds.some(id => !Number.isInteger(id) || id < 0)
+		)
+	) {
+		throw new TypeError('metadata.pairableGroupIds, when provided, must be an array of non-negative integers.');
 	}
 };
 
@@ -260,7 +274,11 @@ export class Output<
 			);
 		}
 
-		this._addTrack('video', source, metadata);
+		const metadataCopy = { ...metadata };
+		metadataCopy.groupId ??= 1;
+		metadataCopy.pairableGroupIds ??= [];
+
+		this._addTrack('video', source, metadataCopy);
 	}
 
 	/** Adds an audio track to the output with the given source. Can only be called before the output is started. */
@@ -270,7 +288,11 @@ export class Output<
 		}
 		validateBaseTrackMetadata(metadata);
 
-		this._addTrack('audio', source, metadata);
+		const metadataCopy = { ...metadata };
+		metadataCopy.groupId ??= 1;
+		metadataCopy.pairableGroupIds ??= [];
+
+		this._addTrack('audio', source, metadataCopy);
 	}
 
 	/** Adds a subtitle track to the output with the given source. Can only be called before the output is started. */
@@ -280,7 +302,11 @@ export class Output<
 		}
 		validateBaseTrackMetadata(metadata);
 
-		this._addTrack('subtitle', source, metadata);
+		const metadataCopy = { ...metadata };
+		metadataCopy.groupId ??= 1;
+		metadataCopy.pairableGroupIds ??= [];
+
+		this._addTrack('subtitle', source, metadataCopy);
 	}
 
 	/**
@@ -300,7 +326,7 @@ export class Output<
 	}
 
 	/** @internal */
-	private _addTrack(type: OutputTrack['type'], source: MediaSource, metadata: object) {
+	private _addTrack(type: OutputTrack['type'], source: MediaSource, metadata: BaseTrackMetadata) {
 		if (this.state !== 'pending') {
 			throw new Error('Cannot add track after output has been started or canceled.');
 		}

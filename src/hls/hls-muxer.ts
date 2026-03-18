@@ -41,7 +41,6 @@ export class HlsMuxer extends Muxer {
 	}
 
 	async start(): Promise<void> {
-		// Nada
 	}
 
 	async getMimeType(): Promise<string> {
